@@ -1,71 +1,70 @@
-# Cycle Indicator Script for TradingView
+# Cycle Sniper Indicator (without SQZMOM)
 
-This script identifies and visualizes cycle lows (Daily Cycle Lows - DCL, Weekly Cycle Lows - WCL) and provides future cycle range predictions based on harmonic and oscillator-based methodologies.
-
----
-
-## Features
-
-- **Cycle Low Detection:**
-  - Identifies Daily Cycle Lows (DCL)
-  - Identifies Weekly Cycle Lows (WCL)
-
-- **Future Cycle Predictions:**
-  - Projects future cycles based on historical harmonic period analysis
-  - Provides oscillator-based cycle range estimations
-
-- **User Interface & Customization:**
-  - Toggle visibility for Daily/Weekly Cycle Lows
-  - Customize future prediction ranges and visual styles (icons, lines, boxes)
+A comprehensive TradingView Pine Script indicator designed to accurately detect cycle lows (Daily and Weekly), provide predictive future cycle range estimates, and generate confirmed trading signals.
 
 ---
 
-## How to Use
+## 🔍 Indicator Overview
 
-1. **Load Script:**
-   - Open TradingView
-   - Open Pine Script Editor
-   - Paste script and save
-   - Add the indicator to your chart
+The Cycle Sniper leverages advanced harmonic cycle analysis combined with DRO (Dynamic Range Oscillator), FRAMA (Fractal Adaptive Moving Average), Larry Williams EMA signals, T3 normalization, and Up/Down bar confirmation methods to:
 
-2. **Customize Settings:**
-   - Open indicator settings (gear icon)
-   - Enable/disable DCL and WCL indicators
-   - Adjust future prediction visualization
+- Identify historical and future cycle lows.
+- Generate actionable entry signals.
+- Visualize market cycle dynamics clearly.
 
 ---
 
-## Technical Overview
+## ⚙️ Key Features
 
-- **DRO Logic:**
-  - Detects swing lows based on price and oscillator divergences
+### ✅ Cycle Detection
+- **Daily Cycle Lows (DCL)**: Predict and visualize daily cycle low zones.
+- **Weekly Cycle Lows (WCL)**: Forecast weekly cycle low windows.
 
-- **Harmonic Period Calculation:**
-  - Derives cycles from historical data using harmonic means
+### ✅ Signal Confirmations
+- **Larry Williams EMA Signals**: EMA-based bullish/bearish confirmations.
+- **FRAMA Indicator**: Adaptive moving average for cycle alignment.
+- **T3 Exit Signals**: Momentum-based exit from oversold conditions.
 
-- **Oscillator-Based Predictions:**
-  - Uses oscillator extremes to estimate future cycle windows
-
-- **Alignment:**
-  - Synchronizes future cycle predictions with historic offsets
-
----
-
-## Troubleshooting
-
-- Ensure Pine Script version compatibility (v5 recommended)
-- Check logs in Pine Script Editor for any errors or warnings
+### ✅ Predictive Features
+- **Future Cycle Predictions**: Visualize future potential cycle low ranges.
+- **Historical Cycle Predictions**: Display past predictions for cycle analysis accuracy verification.
 
 ---
 
-## Support & Contribution
+## 🎛️ Customizable Inputs
 
-For any issues or suggestions:
-- Raise an issue on GitHub
-- Propose enhancements through pull requests
+- **Ticker Presets**: Automatic configuration for BTCUSD, GOLD, NDQ, OIL, or manual input. ( will Update with more assests once matured)
+- **Cycle Period Selection**: Choose harmonic periods (20, 40, 60, 80 days, or 20 weeks).
+- **FRAMA Settings**: Adjust FRAMA fast and slow moving average parameters. ( set automatically to the optimal cycle length for the Asset)
+- **Confirmation Methods**: Enable or disable Larry Williams, FRAMA, and Momentum-based exit from oversold conditions..
 
 ---
 
-## License
+## 🚀 How to Use
 
-Distributed under MIT License. See `LICENSE` for more information.
+1. **Apply to Chart**: Load the script onto your TradingView chart.
+2. **Adjust Inputs**: Use settings to toggle predictions, signals, and select preferred cycles.
+3. **Observe Signals**: Watch for plotted signals and future cycle predictions to make informed trade decisions.
+
+---
+
+## 📌 Signal Types
+
+- 🔺 **Larry Williams Long/Short**: Green/red triangles signaling EMA crossovers.
+- 🔵 **FRAMA Lines**: Yellow (Daily) and Blue (Weekly) adaptive moving averages.
+- 🟢 **Method 1 Signals**: Short red bar sequences followed by green confirmations.
+- 🔴 **Method 2 Signals**: Longer red bar sequences confirmed by green bars.
+- 🟩 **Integrated Long Entry Signal**: Confirmed signals from selected indicators for safer entries.
+
+NOTE: No longer using Larry Williams or T3
+---
+
+## ⚠️ Important Notes
+
+- Always confirm signals with additional technical analysis.
+- Adjust parameters according to ticker volatility and cycle length.
+- This indicator is designed for educational purposes and should be used with discretion in live trading.
+
+---
+
+**Happy Trading! 🚀**

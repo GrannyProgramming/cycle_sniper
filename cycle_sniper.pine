@@ -575,65 +575,50 @@ else
 // --- Plot the Method 1 Signal ---
 // This plots an upward triangle when m1_signal is true.
 plotshape(showM1_New and m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
-x
 // ============================================================================
-// 18. Method 2 Implementation – Primary Signal (for WCL conditions)
-//     (Requires a finished red sequence of at least 5 red bars, then confirmation by 2 green bars)
+// 18. Updated Method 2 Implementation – Primary Signal (for WCL conditions)
+//     (Corrected handling of stacked and interrupted bars)
 // ============================================================================
 
 // --- User Inputs for Method 2 ---
-// (These inputs will appear in your existing "UpDown Test" group)
 yellowLine   = input.int(5, title="Yellow Threshold (min red bars)", minval=1, group=updownGroup)
 magThreshold = input.int(2, title="Green Signal Magnitude", minval=1, group=updownGroup)
 showM2_New   = input.bool(true, title="Show Method 2 Signals", group=updownGroup)
 
-// --- Persistent State Variables for Method 2 ---
-// These variables are used only for Method 2.
+// --- Persistent State Variables for Method 2 (Updated) ---
 var int  redCount         = 0
 var int  greenCount       = 0
 var bool inConfirmation   = false
-var int  interruptRedCount = 0
-var bool m2_signal         = false
+var bool m2_signal        = false
 
-// --- Process Each Bar for Method 2 ---
+// --- Process Each Bar for Updated Method 2 ---
 if redCond
     if not inConfirmation
-        // Accumulate red bars if not in confirmation.
+        // Accumulate red bars if not in confirmation
         redCount := nz(redCount[1]) + 1
         greenCount := 0
-        interruptRedCount := 0
         m2_signal := false
     else
-        // In confirmation phase, a red bar is considered an interruption.
-        interruptRedCount := nz(interruptRedCount[1]) + 1
-        if interruptRedCount >= 2
-            // If two consecutive red bars occur during confirmation, cancel the pending confirmation.
-            inConfirmation := false
-            redCount       := 1  // Start a new red sequence with the current red bar.
-            greenCount     := 0
-            interruptRedCount := 0
-            m2_signal := false
-        else
-            m2_signal := false
+        // A red bar during confirmation cancels the process immediately.
+        inConfirmation := false
+        redCount := 0
+        greenCount := 0
+        m2_signal := false
 else if greenCond
     if redCond[1] and not inConfirmation
-        // When a green bar occurs immediately following a red bar (red sequence ended) and not yet in confirmation:
+        // Transition from red sequence to green confirmation.
         if nz(redCount[1]) >= yellowLine
-            // If the finalized red sequence is at least the yellow threshold, enter confirmation.
             inConfirmation := true
-            greenCount := 1  // Start counting green bars with this green bar.
+            greenCount := 1  // Start counting green bars with this bar.
             m2_signal := false
         else
-            // If the red sequence was too short, reset.
+            // If the red sequence is too short, reset counters.
             redCount := 0
             greenCount := 0
             m2_signal := false
-        interruptRedCount := 0
     else if inConfirmation
         // If already in confirmation, increment the green counter.
         greenCount := nz(greenCount[1]) + 1
-        // Reset any interruption count.
-        interruptRedCount := 0
         m2_signal := false
     else
         // Otherwise, ensure green counter is reset.
@@ -642,15 +627,14 @@ else if greenCond
 else
     m2_signal := false
 
-// --- Signal Firing for Method 2 ---
-// Fire the signal on a green bar if in confirmation and the current greenCount equals the confirmation threshold.
+// --- Signal Firing for Updated Method 2 ---
+// Fire the signal on a green bar if in confirmation and the green count meets/exceeds the threshold.
 if inConfirmation and greenCond and (greenCount >= magThreshold)
     m2_signal := true
     // Reset state after the signal fires.
     inConfirmation := false
     redCount       := 0
     greenCount     := 0
-    interruptRedCount := 0
 
 // --- Plot the Method 2 Signal ---
 // Plot an upward tiny red triangle at the bar's low when m2_signal is true.

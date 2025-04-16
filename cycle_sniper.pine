@@ -502,81 +502,80 @@ exitOS = (not t3InBrightRed) and (t3InBrightRed[1])
 plotshape(show_T3Exit and exitOS, title="Exit OS", style=shape.circle, location=location.belowbar, color=color.green, size=size.normal, transp=0)
 
 // ============================================================================
-// 17. Method 1 Implementation – Alternative for Very Bullish Conditions (for DCLs)
-//     (Using red sequence of exactly 3 or 4 bars and confirmation of 2 green bars)
+// 17. Method 1 Revised Implementation – Alternative for Very Bullish Conditions
+//     (Using a red sequence of exactly 3 (or more) bars and requiring confirmation
+//      by 2 consecutive green bars)
 // ============================================================================
-updownGroup = "UpDown Test"
 
-// --- User Inputs for Method 1 (formerly Method 2) ---
+// --- User Inputs for Method 1 ---
+updownGroup    = "UpDown Test"
 redBarTarget_M1 = input.int(3, title="Red Bar Target for Method 1", minval=1, group=updownGroup)
 magThreshold_M1 = input.int(2, title="Green Signal Magnitude for Method 1", minval=1, group=updownGroup)
 showM1_New      = input.bool(true, title="Show Method 1 Signals", group=updownGroup)
 
 // --- Price Condition Definitions ---
-dopm = input.bool(true, title="Use Midpoint (else use Prev Close)", group=updownGroup)
+dopm    = input.bool(true, title="Use Midpoint (else use Prev Close)", group=updownGroup)
 hl2_val = (high + low) / 2
 greenCond = dopm ? (close > hl2_val[1]) : (close > close[1])
 redCond   = dopm ? (close < hl2_val[1]) : (close < close[1])
-outsidePredictedWCL = true
+outsidePredictedWCL = true  // maintained for consistency with further logic
 
 // --- Persistent State Variables for Method 1 ---
 var int   redCount_M1       = 0
 var int   greenCount_M1     = 0
-var int   redInterrupt_M1   = 0
 var bool  inConfirmation_M1 = false
 var bool  m1_signal         = false
 
-// --- Process Each Bar for Method 1 ---
+// --- Revised Method 1 Logic ---
+// If the current bar is red, increment red counter and cancel any confirmation
 if redCond
-    if not inConfirmation_M1
-        redCount_M1 := nz(redCount_M1[1]) + 1
-        greenCount_M1 := 0
-        redInterrupt_M1 := 0
-        m1_signal := false
-    else
-        if not redCond[1]
-            redInterrupt_M1 := 1
-        else
-            redInterrupt_M1 := nz(redInterrupt_M1[1]) + 1
-        if redInterrupt_M1 >= 2
-            inConfirmation_M1 := false
-            redCount_M1 := 1
-            greenCount_M1 := 0
-            redInterrupt_M1 := 0
-            m1_signal := false
-        else
-            m1_signal := false
-else if greenCond
-    if redCond[1] and not inConfirmation_M1
-        if (nz(redCount_M1[1]) == redBarTarget_M1 or nz(redCount_M1[1]) == (redBarTarget_M1 + 1)) and outsidePredictedWCL
-            inConfirmation_M1 := true
-            greenCount_M1 := 1
-            redInterrupt_M1 := 0
-            m1_signal := false
-        else
-            inConfirmation_M1 := false
-            redCount_M1 := 0
-            greenCount_M1 := 0
-            m1_signal := false
-    else if inConfirmation_M1
-        greenCount_M1 := nz(greenCount_M1[1]) + 1
-        redInterrupt_M1 := 0
-        m1_signal := false
-    else
-        greenCount_M1 := 0
-        m1_signal := false
-else
+    redCount_M1    := nz(redCount_M1[1]) + 1
+    greenCount_M1  := 0
+    // If a red appears during confirmation, cancel the confirmation phase
+    if inConfirmation_M1
+        inConfirmation_M1 := false
     m1_signal := false
 
-if inConfirmation_M1 and greenCond and (greenCount_M1 == magThreshold_M1)
-    m1_signal := true
-    inConfirmation_M1 := false
-    redCount_M1 := 0
-    greenCount_M1 := 0
-    redInterrupt_M1 := 0
+// If the current bar is green, handle accordingly
+else if greenCond
+    // If not already in confirmation and the previous bar was red,
+    // check if the red sequence meets the required target to start confirmation.
+    if not inConfirmation_M1
+        if nz(redCount_M1[1]) >= redBarTarget_M1
+            // Start confirmation phase
+            inConfirmation_M1 := true
+            greenCount_M1     := 1
+            m1_signal         := false
+        else
+            // Red sequence was too short; reset counters
+            redCount_M1   := 0
+            greenCount_M1 := 0
+            m1_signal     := false
+    // If already in confirmation, count consecutive green bars.
+    else
+        // Ensure that only consecutive green bars count.
+        if not greenCond[1]
+            greenCount_M1 := 1  // reset count if previous bar was not green
+        else
+            greenCount_M1 := nz(greenCount_M1[1]) + 1
+        
+        // When the required number of consecutive green bars is reached, trigger signal.
+        if greenCount_M1 >= magThreshold_M1
+            m1_signal := true
+            // Reset all counters and exit confirmation after the signal fires
+            inConfirmation_M1 := false
+            redCount_M1       := 0
+            greenCount_M1     := 0
+        else
+            m1_signal := false
+else
+    // If neither condition is met, do not fire the signal
+    m1_signal := false
 
+// --- Plot the Method 1 Signal ---
+// This plots an upward triangle when m1_signal is true.
 plotshape(showM1_New and m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
-
+x
 // ============================================================================
 // 18. Method 2 Implementation – Primary Signal (for WCL conditions)
 //     (Requires a finished red sequence of at least 5 red bars, then confirmation by 2 green bars)

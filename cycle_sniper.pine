@@ -598,3 +598,5 @@ if use_frama_confirm
 
 plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", style=shape.labelup, 
      location=location.belowbar, text="Long", color=color.green, size=size.tiny)
+
+     

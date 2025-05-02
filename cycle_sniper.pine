@@ -884,122 +884,63 @@ plot(show_FRAMA ? frama_val_wcl : na, title="FRAMA WCL", color=color.blue)
 hl2_val = (high + low) / 2
 greenCond = dopm ? (close > hl2_val[1]) : (close > close[1])
 redCond   = dopm ? (close < hl2_val[1]) : (close < close[1])
-outsidePredictedWCL = true  // maintained for consistency with further logic
+mixedCond = greenCond and redCond
 
 // --- Persistent State Variables for Method 1 ---
-var int   redCount_M1       = 0
-var int   greenCount_M1     = 0
-var bool  inConfirmation_M1 = false
-var bool  m1_signal         = false
+var int   redCount         = 0
+var int   greenCount       = 0
+var int   mixedCount       = 0
+var bool  inConfirmation   = false
+var bool  m2_signal        = false
+var bool  waitingForGreen  = false
 
-// --- Revised Method 1 Logic ---
-// If the current bar is red, increment red counter and cancel any confirmation
-if redCond
-    redCount_M1    := nz(redCount_M1[1]) + 1
-    greenCount_M1  := 0
-    // If a red appears during confirmation, cancel the confirmation phase
-    if inConfirmation_M1
-        inConfirmation_M1 := false
-    m1_signal := false
-
-// If the current bar is green, handle accordingly
-else if greenCond
-    // If not already in confirmation and the previous bar was red,
-    // check if the red sequence meets the required target to start confirmation.
-    if not inConfirmation_M1
-        if nz(redCount_M1[1]) >= redBarTarget_M1
-            // Start confirmation phase
-            inConfirmation_M1 := true
-            greenCount_M1     := 1
-            m1_signal         := false
-        else
-            // Red sequence was too short; reset counters
-            redCount_M1   := 0
-            greenCount_M1 := 0
-            m1_signal     := false
-    // If already in confirmation, count consecutive green bars.
-    else
-        // Ensure that only consecutive green bars count.
-        if not greenCond[1]
-            greenCount_M1 := 1  // reset count if previous bar was not green
-        else
-            greenCount_M1 := nz(greenCount_M1[1]) + 1
-        
-        // When the required number of consecutive green bars is reached, trigger signal.
-        if greenCount_M1 >= magThreshold_M1
-            m1_signal := true
-            // Reset all counters and exit confirmation after the signal fires
-            inConfirmation_M1 := false
-            redCount_M1       := 0
-            greenCount_M1     := 0
-        else
-            m1_signal := false
-else
-    // If neither condition is met, do not fire the signal
-    m1_signal := false
-
-// --- Plot the Method 1 Signal ---
-// This plots an upward triangle when m1_signal is true.
-plotshape(show_FRAMA and m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
-// ============================================================================
-// 18. Updated Method 2 Implementation – Primary Signal (for WCL conditions)
-//     (Corrected handling of stacked and interrupted bars)
-// ============================================================================
-
-// --- Persistent State Variables for Method 2 (Updated) ---
-var int  redCount         = 0
-var int  greenCount       = 0
-var bool inConfirmation   = false
-var bool m2_signal        = false
-
-// --- Process Each Bar for Updated Method 2 ---
-if redCond
-    if not inConfirmation
-        // Accumulate red bars if not in confirmation
-        redCount := nz(redCount[1]) + 1
-        greenCount := 0
-        m2_signal := false
-    else
-        // A red bar during confirmation cancels the process immediately.
-        inConfirmation := false
-        redCount := 0
-        greenCount := 0
-        m2_signal := false
-else if greenCond
-    if redCond[1] and not inConfirmation
-        // Transition from red sequence to green confirmation.
-        if nz(redCount[1]) >= yellowLine
-            inConfirmation := true
-            greenCount := 1  // Start counting green bars with this bar.
-            m2_signal := false
-        else
-            // If the red sequence is too short, reset counters.
-            redCount := 0
-            greenCount := 0
-            m2_signal := false
-    else if inConfirmation
-        // If already in confirmation, increment the green counter.
-        greenCount := nz(greenCount[1]) + 1
-        m2_signal := false
-    else
-        // Otherwise, ensure green counter is reset.
-        greenCount := 0
-        m2_signal := false
-else
-    m2_signal := false
-
-// --- Signal Firing for Updated Method 2 ---
-// Fire the signal on a green bar if in confirmation and the green count meets/exceeds the threshold.
-if inConfirmation and greenCond and (greenCount >= magThreshold)
-    m2_signal := true
-    // Reset state after the signal fires.
+// --- Modified Signal Processing ---
+bool m1_signal = false  // Changed to non-persistent for immediate signal generation
+if mixedCond
+    // Reset counts on mixed signals
+    redCount := 0
+    greenCount := 0
+    mixedCount := mixedCount + 1
     inConfirmation := false
-    redCount       := 0
-    greenCount     := 0
+    waitingForGreen := false
+else if redCond
+    redCount := redCount + 1
+    mixedCount := 0
+    inConfirmation := redCount == redBarTarget_M1  // Changed to exact match
+    
+    if inConfirmation
+        waitingForGreen := true
+        greenCount := 0  // Reset green count when confirmation starts
+else if greenCond
+    if waitingForGreen
+        greenCount := greenCount + 1
+    redCount := 0
+    mixedCount := 0
+else
+    // Neither condition met - reset everything
+    redCount := 0
+    greenCount := 0
+    mixedCount := 0
+    inConfirmation := false
+    waitingForGreen := false
 
-// --- Plot the Method 2 Signal ---
-// Plot an upward tiny red triangle at the bar's low when m2_signal is true.
-plotshape(show_FRAMA and m2_signal, title="M2 Signal", style=shape.triangleup, location=location.belowbar, color=color.red, size=size.tiny)
+// --- Signal Generation ---
+m1_signal := waitingForGreen and greenCount == magThreshold_M1
+m2_signal := m1_signal and mixedCount == 0
+
+// --- Debug Info ---
+if barstate.islast
+    label.new(bar_index, high, 
+         text="Red: " + str.tostring(redCount) + 
+         "\nGreen: " + str.tostring(greenCount) + 
+         "\nMixed: " + str.tostring(mixedCount) + 
+         "\nWaiting: " + str.tostring(waitingForGreen) +
+         "\nConfirm: " + str.tostring(inConfirmation), 
+         color=color.new(color.blue, 0))
+
+// --- Plot Signals ---
+plotshape(m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.blue, size=size.tiny)
+plotshape(m2_signal, title="M2 Signal", style=shape.triangleup, location=location.belowbar, color=color.red, size=size.tiny)
 
 // ============================================================================
 // 19. Integrated Long Entry Signal with FRAMA and UP_down Confirmation
@@ -1015,9 +956,9 @@ if use_ud_confirm
     combined_long_entry := combined_long_entry and (math.sum((m1_signal or m2_signal) ? 1 : 0, 5) > 0)
 if use_frama_confirm
     if frama_choice == "WCL"
-        combined_long_entry := combined_long_entry and (close > f_frama_confirm) and (math.sum(high < f_frama_confirm ? 1 : 0, 5) > 0)
+        combined_long_entry := combined_long_entry and (close > f_frama_confirm) and (math.sum(high < f_frama_confirm ? 1 : 0, 8 > 0)
     else
-        combined_long_entry := combined_long_entry and (close > f_frama_confirm) and (math.sum(close < f_frama_confirm ? 1 : 0, 5) > 0)
+        combined_long_entry := combined_long_entry and (close > f_frama_confirm) and (math.sum(close < f_frama_confirm ? 1 : 0, 8) > 0)
 
 plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", style=shape.labelup, 
      location=location.belowbar, text="Long", color=color.green, size=size.tiny)

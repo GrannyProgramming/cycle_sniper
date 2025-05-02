@@ -63,15 +63,132 @@ if useTickerSpecific
     if syminfo.ticker == "BTCUSD"
         ticker_dro := 6
         ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "GME"
+        ticker_dro := 6
+        ticker_harmonic := "60 Day"
     else if syminfo.ticker == "GOLD"
         ticker_dro := 9
         ticker_harmonic := "20 Day"
     else if syminfo.ticker == "NDQ"
-        ticker_dro := 7
-        ticker_harmonic := "40 Day"
+        ticker_dro := 8
+        ticker_harmonic := "60 Day"
     else if syminfo.ticker == "OIL"
         ticker_dro := 8
         ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "QQQ"
+        ticker_dro := 8
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "RUT"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "SILVER"
+        ticker_dro := 9
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "SMH"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "SPX"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "TSLA"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "UPR"
+        ticker_dro := 5
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VDC"
+        ticker_dro := 10
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VDE"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VFH"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VHT"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VIS"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VIX"
+        ticker_dro := 9
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "VNQ"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VOX"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CIFR"
+        ticker_dro := 5
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "WULF"
+        ticker_dro := 5
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "HUT"
+        ticker_dro := 6
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "IREN"
+        ticker_dro := 5
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "HOOD"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "BTBT"
+        ticker_dro := 5
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "MSTR"
+        ticker_dro := 10
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "MARA"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "RIOT"
+        ticker_dro := 6
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "HIVE"
+        ticker_dro := 9
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "BLK"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CLSK"
+        ticker_dro := 9
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "COIN"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "BITF"
+        ticker_dro := 5
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "CDE"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "HMY"
+        ticker_dro := 9
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "SILJ"
+        ticker_dro := 10
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "NGD"
+        ticker_dro := 8
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "OR"
+        ticker_dro := 11
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "KGC"
+        ticker_dro := 12
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "NEM"
+        ticker_dro := 11
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "GFI"
+        ticker_dro := 10
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "AGI"
+        ticker_dro := 11
+        ticker_harmonic := "20 Day"
     else
         ticker_dro := na
         ticker_harmonic := ""
@@ -599,4 +716,3 @@ if use_frama_confirm
 plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", style=shape.labelup, 
      location=location.belowbar, text="Long", color=color.green, size=size.tiny)
 
-     

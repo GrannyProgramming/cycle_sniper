@@ -1,5 +1,5 @@
 //@version=5
-indicator("Cycle Sniper without SQZMOM", overlay=true, format=format.price, precision=3, max_bars_back=5000)
+indicator("Cycle Sniper", overlay=true, format=format.price, precision=3, max_bars_back=5000)
 
 // ============================================================================
 // 1. Inputs & Constants
@@ -11,10 +11,7 @@ show_hist_trough  = input.bool(true, "Show Historical Cycle Lows Predictions", g
 
 // ----- Confirmation Signals -----
 groupSignals = "Confirmation Signals"
-show_LW    = input.bool(true, "Show Larry Williams Signals", group=groupSignals)
 show_FRAMA = input.bool(true, "Show FRAMA Indicator", group=groupSignals)
-show_T3Exit = input.bool(true, "Show T3 Exit Signal", group=groupSignals)
-// SQZMOM confirmation toggle removed (parked)
 
 // ----- Manual Settings (formerly DCL Analysis) -----
 groupManual = "MANUAL SETTINGS"
@@ -26,13 +23,6 @@ sig_in = input.string("NONE", "Harmonic Period", options=["20 Day", "40 Day", "6
 groupFRAMA = "FRAMA Settings"
 framaFC = input.int(1, "FRAMA Fast MA", minval=1, group=groupFRAMA)
 framaSC = input.int(200, "FRAMA Slow MA", minval=1, group=groupFRAMA)
-
-// ----- T3 Normalisation for WCL Momentum Checking (Hidden) -----
-groupT3 = "T3 Normalised (Hidden)"
-t3Length    = input.int(2, "T3 Calc Period", group=groupT3)
-t3Source    = input.source(close, "T3 Calc Source", group=groupT3)
-t3VolFactor = input.float(0.7, "T3 Volume Factor", group=groupT3)
-t3NormPeriod= input.int(50, "T3 Normalisation Period", minval=1, group=groupT3)
 
 // ----- Tooltip Settings (Keep at Bottom) -----
 groupTooltip = "Tooltip Settings"
@@ -50,6 +40,13 @@ size_input = input.string("small", "Text Size",
 var int MAX_ARRAY_SIZE = 1000000
 var int DECIMALS = 2
 
+// Constants for Method 1 and Method 2 (formerly inputs)
+var int redBarTarget_M1 = 3      // Red Bar Target for Method 1
+var int magThreshold_M1 = 2      // Green Signal Magnitude for Method 1
+var bool dopm = true             // Use Midpoint (else use Prev Close)
+var int yellowLine = 5           // Yellow Threshold (min red bars)
+var int magThreshold = 2         // Green Signal Magnitude
+
 // ============================================================================
 // Global variables for low-finding logic
 // ============================================================================
@@ -66,15 +63,132 @@ if useTickerSpecific
     if syminfo.ticker == "BTCUSD"
         ticker_dro := 6
         ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "GME"
+        ticker_dro := 6
+        ticker_harmonic := "60 Day"
     else if syminfo.ticker == "GOLD"
         ticker_dro := 9
         ticker_harmonic := "20 Day"
     else if syminfo.ticker == "NDQ"
-        ticker_dro := 7
-        ticker_harmonic := "40 Day"
+        ticker_dro := 8
+        ticker_harmonic := "60 Day"
     else if syminfo.ticker == "OIL"
         ticker_dro := 8
         ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "QQQ"
+        ticker_dro := 8
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "RUT"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "SILVER"
+        ticker_dro := 9
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "SMH"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "SPX"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "TSLA"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "UPR"
+        ticker_dro := 5
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VDC"
+        ticker_dro := 10
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VDE"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VFH"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VHT"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VIS"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VIX"
+        ticker_dro := 9
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "VNQ"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "VOX"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CIFR"
+        ticker_dro := 5
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "WULF"
+        ticker_dro := 5
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "HUT"
+        ticker_dro := 6
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "IREN"
+        ticker_dro := 5
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "HOOD"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "BTBT"
+        ticker_dro := 5
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "MSTR"
+        ticker_dro := 10
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "MARA"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "RIOT"
+        ticker_dro := 6
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "HIVE"
+        ticker_dro := 9
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "BLK"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CLSK"
+        ticker_dro := 9
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "COIN"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "BITF"
+        ticker_dro := 5
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "CDE"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "HMY"
+        ticker_dro := 9
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "SILJ"
+        ticker_dro := 10
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "NGD"
+        ticker_dro := 8
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "OR"
+        ticker_dro := 11
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "KGC"
+        ticker_dro := 12
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "NEM"
+        ticker_dro := 11
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "GFI"
+        ticker_dro := 10
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "AGI"
+        ticker_dro := 11
+        ticker_harmonic := "20 Day"
     else
         ticker_dro := na
         ticker_harmonic := ""
@@ -101,19 +215,6 @@ f_getCycleBars(string cycleText, float avg) =>
 // ============================================================================
 // 3. Helper Functions (Existing Functions)
 // ============================================================================
-f_t3(src, length, vFactor) =>
-    e1 = ta.ema(src, length)
-    e2 = ta.ema(e1, length)
-    e3 = ta.ema(e2, length)
-    e4 = ta.ema(e3, length)
-    e5 = ta.ema(e4, length)
-    e6 = ta.ema(e5, length)
-    c1 = -vFactor * vFactor * vFactor
-    c2 =  3 * vFactor * vFactor + 3 * vFactor * vFactor * vFactor
-    c3 = -6 * vFactor * vFactor - 3 * vFactor - vFactor * vFactor * vFactor
-    c4 =  1 + 3 * vFactor + 3 * vFactor * vFactor + vFactor * vFactor * vFactor
-    c1 * e6 + c2 * e5 + c3 * e4 + c4 * e3
-
 f_drawFuturePrediction(float xlo, float wavelength, int baseIndex, color lineColor, color fillColor, int tolerance) =>
     float half_width = wavelength / 4.0
     int pred = na
@@ -408,18 +509,6 @@ bg_color_val = show_hist_trough ? color.new(color.green, lo ? 75 : 100) : na
 bgcolor(bg_color_val, title="Trough Estimate", offset=int(wavelength))
 
 // ============================================================================
-// 14. Larry Williams Indicator Implementation
-// ============================================================================
-ma9 = ta.ema(close, 9)
-plot(show_LW ? ma9 : na, linewidth=1, color=color.white, title="LW EMA")
-above_ma9 = ma9[1] < ma9
-lwLong  = not above_ma9[3] and not above_ma9[2] and not above_ma9[1] and above_ma9
-plotshape(show_LW and lwLong, title="Larry Williams Long Signal", style=shape.triangleup, location=location.belowbar, size=size.tiny, color=color.lime, text="9.1")
-
-lwShort = above_ma9[3] and above_ma9[2] and above_ma9[1] and not above_ma9
-plotshape(show_LW and lwShort, title="Larry Williams Short Signal", style=shape.triangledown, location=location.abovebar, size=size.tiny, color=color.red, text="9.1")
-
-// ============================================================================
 // 15. FRAMA Indicator Implementation (Dual FRAMA for DCL and WCL)
 // ============================================================================
 float frama_period_dcl = finalHarmonic
@@ -480,41 +569,12 @@ plot(show_FRAMA ? frama_val_dcl : na, title="FRAMA DCL", color=color.yellow)
 plot(show_FRAMA ? frama_val_wcl : na, title="FRAMA WCL", color=color.blue)
 
 // ============================================================================
-// 16. T3 Normalisation for WCL Momentum Checking (Hidden)
-// ============================================================================
-t3subject   = f_t3(t3Source, t3Length, t3VolFactor)
-float t3lowest  = ta.lowest(t3subject, t3NormPeriod)
-float t3highest = ta.highest(t3subject, t3NormPeriod)
-float t3_norm   = (t3subject - t3lowest) / math.max(t3highest - t3lowest, 1e-6) - 0.50
-bool t3InBrightRed = (t3_norm <= -0.4)
-var bool wasInBrightRed       = false
-var bool t3MomentumBottomed   = false
-if t3InBrightRed
-    if t3MomentumBottomed
-        t3MomentumBottomed := false
-    wasInBrightRed := true
-else
-    if wasInBrightRed
-        t3MomentumBottomed := true
-    wasInBrightRed := false
-
-exitOS = (not t3InBrightRed) and (t3InBrightRed[1])
-plotshape(show_T3Exit and exitOS, title="Exit OS", style=shape.circle, location=location.belowbar, color=color.green, size=size.normal, transp=0)
-
-// ============================================================================
 // 17. Method 1 Revised Implementation – Alternative for Very Bullish Conditions
 //     (Using a red sequence of exactly 3 (or more) bars and requiring confirmation
 //      by 2 consecutive green bars)
 // ============================================================================
 
-// --- User Inputs for Method 1 ---
-updownGroup    = "UpDown Test"
-redBarTarget_M1 = input.int(3, title="Red Bar Target for Method 1", minval=1, group=updownGroup)
-magThreshold_M1 = input.int(2, title="Green Signal Magnitude for Method 1", minval=1, group=updownGroup)
-showM1_New      = input.bool(true, title="Show Method 1 Signals", group=updownGroup)
-
 // --- Price Condition Definitions ---
-dopm    = input.bool(true, title="Use Midpoint (else use Prev Close)", group=updownGroup)
 hl2_val = (high + low) / 2
 greenCond = dopm ? (close > hl2_val[1]) : (close > close[1])
 redCond   = dopm ? (close < hl2_val[1]) : (close < close[1])
@@ -574,16 +634,11 @@ else
 
 // --- Plot the Method 1 Signal ---
 // This plots an upward triangle when m1_signal is true.
-plotshape(showM1_New and m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
+plotshape(show_FRAMA and m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
 // ============================================================================
 // 18. Updated Method 2 Implementation – Primary Signal (for WCL conditions)
 //     (Corrected handling of stacked and interrupted bars)
 // ============================================================================
-
-// --- User Inputs for Method 2 ---
-yellowLine   = input.int(5, title="Yellow Threshold (min red bars)", minval=1, group=updownGroup)
-magThreshold = input.int(2, title="Green Signal Magnitude", minval=1, group=updownGroup)
-showM2_New   = input.bool(true, title="Show Method 2 Signals", group=updownGroup)
 
 // --- Persistent State Variables for Method 2 (Updated) ---
 var int  redCount         = 0
@@ -638,15 +693,14 @@ if inConfirmation and greenCond and (greenCount >= magThreshold)
 
 // --- Plot the Method 2 Signal ---
 // Plot an upward tiny red triangle at the bar's low when m2_signal is true.
-plotshape(showM2_New and m2_signal, title="M2 Signal", style=shape.triangleup, location=location.belowbar, color=color.red, size=size.tiny)
+plotshape(show_FRAMA and m2_signal, title="M2 Signal", style=shape.triangleup, location=location.belowbar, color=color.red, size=size.tiny)
 
 // ============================================================================
-// 19. Integrated Long Entry Signal (Longs Only, No Exit Logic) with FRAMA Delay
+// 19. Integrated Long Entry Signal with FRAMA and UP_down Confirmation
 // ============================================================================
 groupConfirm = "Confirmation Options"
 use_frama_confirm = input.bool(true, title="Use FRAMA Confirmation", group=groupConfirm)
-use_lw_confirm    = input.bool(true, title="Use Larry Williams Confirmation", group=groupConfirm)
-use_ud_confirm    = input.bool(true, title="Use Up/Down Confirmation", group=groupConfirm)
+use_ud_confirm    = input.bool(true, title="Use UP/Down Confirmation", group=groupConfirm)
 frama_choice = input.string("DCL", title="Select FRAMA Confirmation Line", options=["DCL", "WCL"], group=groupConfirm)
 f_frama_confirm = frama_choice == "DCL" ? frama_val_dcl : frama_val_wcl
 
@@ -658,8 +712,7 @@ if use_frama_confirm
         combined_long_entry := combined_long_entry and (close > f_frama_confirm) and (math.sum(high < f_frama_confirm ? 1 : 0, 5) > 0)
     else
         combined_long_entry := combined_long_entry and (close > f_frama_confirm) and (math.sum(close < f_frama_confirm ? 1 : 0, 5) > 0)
-if use_lw_confirm
-    combined_long_entry := combined_long_entry and lwLong
 
 plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", style=shape.labelup, 
      location=location.belowbar, text="Long", color=color.green, size=size.tiny)
+

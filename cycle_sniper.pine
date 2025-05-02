@@ -189,6 +189,312 @@ if useTickerSpecific
     else if syminfo.ticker == "AGI"
         ticker_dro := 11
         ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "AAPL"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "ABBV"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "ACN"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "ADBE"
+        ticker_dro := 8
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "ADP"
+        ticker_dro := 8
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "AEM"
+        ticker_dro := 9
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "AIR"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "AMD"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "AMGN"
+        ticker_dro := 9
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "AMT"
+        ticker_dro := 9
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "AMZN"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "ASML"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "AVGO"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "AXP"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "BA"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "BKNG"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "BN"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CAT"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CL"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "CLX"
+        ticker_dro := 8
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "CME"
+        ticker_dro := 10
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "COST"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CRH"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CRM"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CRWD"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "CVX"
+        ticker_dro := 8
+        ticker_harmonic := "80 Day"
+    else if syminfo.ticker == "D"
+        ticker_dro := 11
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "DE"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "DG"
+        ticker_dro := 9
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "DHR"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "DIS"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "DOCU"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "DRD"
+        ticker_dro := 7
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "ELV"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "FDX"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "FICO"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "GDX"
+        ticker_dro := 11
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "GOOG"
+        ticker_dro := 9
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "GS"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "HD"
+        ticker_dro := 9
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "HIMS"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "HLT"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "HON"
+        ticker_dro := 6
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "IAG"
+        ticker_dro := 8
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "IIPR"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "INTU"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "JNJ"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "JPM"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "KKR"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "KO"
+        ticker_dro := 10
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "LLY"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "LMT"
+        ticker_dro := 8
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "LOW"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "LULU"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "MA"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "MCD"
+        ticker_dro := 9
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "MCO"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "MELI"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "META"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "MRK"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "MS"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "MSFT"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "MSGS"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "NFLX"
+        ticker_dro := 8
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "NKE"
+        ticker_dro := 9
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "NOW"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "NTLA"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "NVDA"
+        ticker_dro := 7
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "NVO"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "NVS"
+        ticker_dro := 9
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "O"
+        ticker_dro := 9
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "PEP"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "PFE"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "PG"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "PLD"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "PLTR"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "PSA"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "QCOM"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "QSR"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "REGN"
+        ticker_dro := 6
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "RGLD"
+        ticker_dro := 11
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "RR."
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "RTX"
+        ticker_dro := 9
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "SNOW"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "SOFI"
+        ticker_dro := 5
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "SPGI"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "STNE"
+        ticker_dro := 6
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "TMO"
+        ticker_dro := 9
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "TMUS"
+        ticker_dro := 12
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "TTE"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "TTWO"
+        ticker_dro := 10
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "TXN"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "ULVR"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "UNH"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "UNP"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "UPS"
+        ticker_dro := 6
+        ticker_harmonic := "60 Day"
+    else if syminfo.ticker == "V"
+        ticker_dro := 8
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "WCN"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "WM"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "WMT"
+        ticker_dro := 11
+        ticker_harmonic := "40 Day"
+    else if syminfo.ticker == "WPM"
+        ticker_dro := 8
+        ticker_harmonic := "20 Day"
+    else if syminfo.ticker == "XOM"
+        ticker_dro := 7
+        ticker_harmonic := "40 Day"
     else
         ticker_dro := na
         ticker_harmonic := ""

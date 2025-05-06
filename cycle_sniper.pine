@@ -949,7 +949,5 @@ if use_frama_confirm
     else
         combined_long_entry := combined_long_entry and current_above and crossed_below
 
-plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", 
-    style=shape.labelup, location=location.belowbar, text="Long", 
-    color=color.green, size=size.tiny)
+plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", style=shape.labelup, location=location.belowbar, text="Long", color=color.green, size=size.tiny)
 

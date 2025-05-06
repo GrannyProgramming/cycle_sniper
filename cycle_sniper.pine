@@ -875,72 +875,55 @@ plot(show_FRAMA ? frama_val_dcl : na, title="FRAMA DCL", color=color.yellow)
 plot(show_FRAMA ? frama_val_wcl : na, title="FRAMA WCL", color=color.blue)
 
 // ============================================================================
-// 17. Method 1 Revised Implementation – Alternative for Very Bullish Conditions
-//     (Using a red sequence of exactly 3 (or more) bars and requiring confirmation
-//      by 2 consecutive green bars)
+// 17. Method 1 Revised Implementation
 // ============================================================================
 
 // --- Price Condition Definitions ---
 hl2_val = (high + low) / 2
 greenCond = dopm ? (close > hl2_val[1]) : (close > close[1])
 redCond   = dopm ? (close < hl2_val[1]) : (close < close[1])
-mixedCond = greenCond and redCond
 
 // --- Persistent State Variables for Method 1 ---
-var int   redCount         = 0
-var int   greenCount       = 0
-var int   mixedCount       = 0
-var bool  inConfirmation   = false
-var bool  m2_signal        = false
-var bool  waitingForGreen  = false
+var int   redCount_M1       = 0
+var int   greenCount_M1     = 0
+var bool  inConfirmation_M1 = false
+var bool  m1_signal         = false
 
-// --- Modified Signal Processing ---
-bool m1_signal = false  // Changed to non-persistent for immediate signal generation
-if mixedCond
-    // Reset counts on mixed signals
-    redCount := 0
-    greenCount := 0
-    mixedCount := mixedCount + 1
-    inConfirmation := false
-    waitingForGreen := false
-else if redCond
-    redCount := redCount + 1
-    mixedCount := 0
-    inConfirmation := redCount == redBarTarget_M1  // Changed to exact match
-    
-    if inConfirmation
-        waitingForGreen := true
-        greenCount := 0  // Reset green count when confirmation starts
+// --- Revised Method 1 Logic ---
+if redCond
+    redCount_M1    := nz(redCount_M1[1]) + 1
+    greenCount_M1  := 0
+    if inConfirmation_M1
+        inConfirmation_M1 := false
+    m1_signal := false
 else if greenCond
-    if waitingForGreen
-        greenCount := greenCount + 1
-    redCount := 0
-    mixedCount := 0
+    if not inConfirmation_M1
+        if nz(redCount_M1[1]) >= redBarTarget_M1
+            inConfirmation_M1 := true
+            greenCount_M1     := 1
+            m1_signal         := false
+        else
+            redCount_M1   := 0
+            greenCount_M1 := 0
+            m1_signal     := false
+    else
+        if not greenCond[1]
+            greenCount_M1 := 1
+        else
+            greenCount_M1 := nz(greenCount_M1[1]) + 1
+        
+        if greenCount_M1 >= magThreshold_M1
+            m1_signal := true
+            inConfirmation_M1 := false
+            redCount_M1       := 0
+            greenCount_M1     := 0
+        else
+            m1_signal := false
 else
-    // Neither condition met - reset everything
-    redCount := 0
-    greenCount := 0
-    mixedCount := 0
-    inConfirmation := false
-    waitingForGreen := false
+    m1_signal := false
 
-// --- Signal Generation ---
-m1_signal := waitingForGreen and greenCount == magThreshold_M1
-m2_signal := m1_signal and mixedCount == 0
-
-// --- Debug Info ---
-if barstate.islast
-    label.new(bar_index, high, 
-         text="Red: " + str.tostring(redCount) + 
-         "\nGreen: " + str.tostring(greenCount) + 
-         "\nMixed: " + str.tostring(mixedCount) + 
-         "\nWaiting: " + str.tostring(waitingForGreen) +
-         "\nConfirm: " + str.tostring(inConfirmation), 
-         color=color.new(color.blue, 0))
-
-// --- Plot Signals ---
-plotshape(m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.blue, size=size.tiny)
-plotshape(m2_signal, title="M2 Signal", style=shape.triangleup, location=location.belowbar, color=color.red, size=size.tiny)
+// Plot M1 Signal
+plotshape(m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
 
 // ============================================================================
 // 19. Integrated Long Entry Signal with FRAMA and UP_down Confirmation
@@ -953,13 +936,20 @@ f_frama_confirm = frama_choice == "DCL" ? frama_val_dcl : frama_val_wcl
 
 bool combined_long_entry = true
 if use_ud_confirm
-    combined_long_entry := combined_long_entry and (math.sum((m1_signal or m2_signal) ? 1 : 0, 5) > 0)
+    combined_long_entry := combined_long_entry and (math.sum((m1_signal) ? 1 : 0, 5) > 0)
 if use_frama_confirm
+    float frama_confirm_value = f_frama_confirm
+    int lookback_period = 8
+    bool crossed_below = math.sum(close < frama_confirm_value ? 1 : 0, lookback_period) >= 3  // Modified to work with >= 3 red bars
+    bool current_above = close > frama_confirm_value
+    bool high_below = math.sum(high < frama_confirm_value ? 1 : 0, lookback_period) >= 3      // Modified to work with >= 3 red bars
+    
     if frama_choice == "WCL"
-        combined_long_entry := combined_long_entry and (close > f_frama_confirm) and (math.sum(high < f_frama_confirm ? 1 : 0, 8 > 0)
+        combined_long_entry := combined_long_entry and current_above and high_below
     else
-        combined_long_entry := combined_long_entry and (close > f_frama_confirm) and (math.sum(close < f_frama_confirm ? 1 : 0, 8) > 0)
+        combined_long_entry := combined_long_entry and current_above and crossed_below
 
-plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", style=shape.labelup, 
-     location=location.belowbar, text="Long", color=color.green, size=size.tiny)
+plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", 
+    style=shape.labelup, location=location.belowbar, text="Long", 
+    color=color.green, size=size.tiny)
 

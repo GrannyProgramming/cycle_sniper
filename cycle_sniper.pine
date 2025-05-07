@@ -811,8 +811,11 @@ if show_future_dcl and not na(wavelength_week) and not na(xlo_week)
 // ============================================================================
 // 13. Historical Trough Estimate – Plot Background Color
 // ============================================================================
-bg_color_val = show_hist_trough ? color.new(color.green, lo ? 75 : 100) : na
-bgcolor(bg_color_val, title="Trough Estimate", offset=int(wavelength))
+bg_color_dcl = show_hist_trough ? color.new(color.green, lo ? 75 : 100) : na
+bg_color_wcl = show_hist_trough ? color.new(color.blue, lo_week ? 75 : 100) : na
+
+bgcolor(bg_color_dcl, title="DCL Trough Estimate", offset=int(wavelength))
+bgcolor(bg_color_wcl, title="WCL Trough Estimate", offset=int(wavelength_week))
 
 // ============================================================================
 // 15. FRAMA Indicator Implementation (Dual FRAMA for DCL and WCL)
@@ -923,33 +926,59 @@ else
     m1_signal := false
 
 // Plot M1 Signal
-plotshape(m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
+plotshape(m1_signal, 
+     title="M1 Signal", 
+     style=shape.triangleup, 
+     location=location.belowbar, 
+     color=color.green, 
+     size=size.tiny)
 
 // ============================================================================
 // 19. Integrated Long Entry Signal with FRAMA and UP_down Confirmation
 // ============================================================================
-groupConfirm = "Confirmation Options"
-use_frama_confirm = input.bool(true, title="Use FRAMA Confirmation", group=groupConfirm)
-use_ud_confirm    = input.bool(true, title="Use UP/Down Confirmation", group=groupConfirm)
-frama_choice = input.string("DCL", title="Select FRAMA Confirmation Line", options=["DCL", "WCL"], group=groupConfirm)
-f_frama_confirm = frama_choice == "DCL" ? frama_val_dcl : frama_val_wcl
 
-bool combined_long_entry = true
+// Remove input toggles for FRAMA confirmation and keep only UP/Down confirmation
+groupConfirmSignals = "Confirmation Options"
+use_ud_confirm = input.bool(true, title="Use UP/Down Confirmation", group=groupConfirmSignals)
+
+// Modified combined entry logic with both signals always active
+bool combined_long_entry_dcl = true
+bool combined_long_entry_wcl = true
+
+// UP/Down confirmation (if enabled)
 if use_ud_confirm
-    combined_long_entry := combined_long_entry and (math.sum((m1_signal) ? 1 : 0, 5) > 0)
-if use_frama_confirm
-    float frama_confirm_value = f_frama_confirm
-    int lookback_period = 8
-    bool crossed_below = math.sum(close < frama_confirm_value ? 1 : 0, lookback_period) >= 3  // Modified to work with >= 3 red bars
-    bool current_above = close > frama_confirm_value
-    bool high_below = math.sum(high < frama_confirm_value ? 1 : 0, lookback_period) >= 3      // Modified to work with >= 3 red bars
-    
-    if frama_choice == "WCL"
-        combined_long_entry := combined_long_entry and current_above and high_below
-    else
-        combined_long_entry := combined_long_entry and current_above and crossed_below
+    combined_long_entry_dcl := combined_long_entry_dcl and (math.sum((m1_signal) ? 1 : 0, 5) > 0)
+    combined_long_entry_wcl := combined_long_entry_wcl and (math.sum((m1_signal) ? 1 : 0, 5) > 0)
 
-plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", 
-    style=shape.labelup, location=location.belowbar, text="Long", 
-    color=color.green, size=size.tiny)
+// Always check both FRAMA conditions
+int lookback_period = 8
+// DCL FRAMA condition
+bool crossed_below_dcl = math.sum(high < frama_val_dcl ? 1 : 0, lookback_period) >= 3
+bool current_above_dcl = close > frama_val_dcl
+combined_long_entry_dcl := combined_long_entry_dcl and current_above_dcl and crossed_below_dcl
+
+// WCL FRAMA condition
+bool crossed_below_wcl = math.sum(high < frama_val_wcl ? 1 : 0, lookback_period) >= 3
+bool current_above_wcl = close > frama_val_wcl
+combined_long_entry_wcl := combined_long_entry_wcl and current_above_wcl and crossed_below_wcl
+
+// Plot both signals simultaneously with their respective colors
+plotshape(combined_long_entry_dcl and not combined_long_entry_dcl[1], 
+     title="DCL Long Entry Signal", 
+     style=shape.labelup, 
+     location=location.belowbar, 
+     offset=0, 
+     text="DCL", 
+     color=color.green, 
+     textcolor=color.white, 
+     size=size.tiny)
+plotshape(combined_long_entry_wcl and not combined_long_entry_wcl[1], 
+     title="WCL Long Entry Signal", 
+     style=shape.labelup, 
+     location=location.belowbar, 
+     offset=-1, 
+     text="WCL", 
+     color=color.blue, 
+     textcolor=color.white, 
+     size=size.tiny)
 

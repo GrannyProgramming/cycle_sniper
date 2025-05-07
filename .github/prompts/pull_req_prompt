@@ -1,0 +1,37 @@
+# Pull Request Description Instructions for Cycle Sniper
+
+## PR Title Format
+[Type] Brief description of changes
+
+## Description Structure
+### Overview
+- Purpose of changes
+- Trading strategy impact
+- Implementation approach
+
+### Technical Details
+- Algorithm changes
+- Performance implications
+- Dependencies modified
+
+### Testing
+- Test coverage
+- Backtesting results
+- Edge cases handled
+
+### Documentation
+- Updated documentation
+- Configuration changes
+- New parameters
+
+### Deployment
+- Breaking changes
+- Version compatibility
+- Configuration updates
+
+## Checklist
+- [ ] Tests added/updated
+- [ ] Documentation updated
+- [ ] Performance tested
+- [ ] Backtesting completed
+- [ ] Code reviewed

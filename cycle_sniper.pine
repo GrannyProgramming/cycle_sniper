@@ -811,8 +811,11 @@ if show_future_dcl and not na(wavelength_week) and not na(xlo_week)
 // ============================================================================
 // 13. Historical Trough Estimate – Plot Background Color
 // ============================================================================
-bg_color_val = show_hist_trough ? color.new(color.green, lo ? 75 : 100) : na
-bgcolor(bg_color_val, title="Trough Estimate", offset=int(wavelength))
+bg_color_dcl = show_hist_trough ? color.new(color.green, lo ? 75 : 100) : na
+bg_color_wcl = show_hist_trough ? color.new(color.blue, lo_week ? 75 : 100) : na
+
+bgcolor(bg_color_dcl, title="DCL Trough Estimate", offset=int(wavelength))
+bgcolor(bg_color_wcl, title="WCL Trough Estimate", offset=int(wavelength_week))
 
 // ============================================================================
 // 15. FRAMA Indicator Implementation (Dual FRAMA for DCL and WCL)

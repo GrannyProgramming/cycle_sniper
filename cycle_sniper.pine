@@ -923,15 +923,22 @@ else
     m1_signal := false
 
 // Plot M1 Signal
-plotshape(m1_signal, title="M1 Signal", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
+// Plot M1 Signal
+plotshape(m1_signal, 
+     title="M1 Signal", 
+     style=shape.triangleup, 
+     location=location.absolute, 
+     price=low - (ta.tr * 0.5), 
+     color=color.green, 
+     size=size.tiny)
 
 // ============================================================================
 // 19. Integrated Long Entry Signal with FRAMA and UP_down Confirmation
 // ============================================================================
-groupConfirm = "Confirmation Options"
-use_frama_confirm = input.bool(true, title="Use FRAMA Confirmation", group=groupConfirm)
-use_ud_confirm    = input.bool(true, title="Use UP/Down Confirmation", group=groupConfirm)
-frama_choice = input.string("DCL", title="Select FRAMA Confirmation Line", options=["DCL", "WCL"], group=groupConfirm)
+groupConfirmSignals = "Confirmation Options"  // Changed from groupConfirm
+use_frama_confirm = input.bool(true, title="Use FRAMA Confirmation", group=groupConfirmSignals)
+use_ud_confirm    = input.bool(true, title="Use UP/Down Confirmation", group=groupConfirmSignals)
+frama_choice = input.string("DCL", title="Select FRAMA Confirmation Line", options=["DCL", "WCL"], group=groupConfirmSignals)
 f_frama_confirm = frama_choice == "DCL" ? frama_val_dcl : frama_val_wcl
 
 bool combined_long_entry = true
@@ -949,5 +956,12 @@ if use_frama_confirm
     else
         combined_long_entry := combined_long_entry and current_above and crossed_below
 
-plotshape(combined_long_entry and not combined_long_entry[1], title="Long Entry Signal", style=shape.labelup, location=location.belowbar, text="Long", color=color.green, size=size.tiny)
+plotshape(combined_long_entry and not combined_long_entry[1], 
+    title="Long Entry Signal", 
+    style=shape.labelup, 
+    location=location.absolute,  // Changed from belowbar to absolute
+    price=low - (ta.tr * 1),    // Plot below the candle, slightly lower than M1 signal
+    text="Long", 
+    color=color.green, 
+    size=size.tiny)
 

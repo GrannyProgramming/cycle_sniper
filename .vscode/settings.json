@@ -1,0 +1,18 @@
+{
+    "github.copilot.chat.codeGeneration.instructions": {
+        "path": ".github/prompts/code_generation.md"
+    },
+    "github.copilot.chat.testGeneration.instructions": {
+        "path": ".github/prompts/test_prompt.md"
+    },
+    "github.copilot.chat.reviewSelection.instructions": {
+        "path": ".github/prompts/code_review_prompt.md"
+    },
+    "github.copilot.chat.commitMessageGeneration.instructions": {
+        "path": ".github/prompts/commit_prompt.md"
+    },
+    "github.copilot.chat.pullRequestDescriptionGeneration.instructions": {
+        "path": ".github/prompts/pull_req_prompt"
+    },
+    "github.copilot.chat.useInstructionFiles": true
+}

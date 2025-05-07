@@ -967,7 +967,11 @@ plotshape(combined_long_entry_dcl and not combined_long_entry_dcl[1],
      title="DCL Long Entry Signal", 
      style=shape.labelup, 
      location=location.belowbar, 
+<<<<<<< Updated upstream
      offset=0, 
+=======
+     offset=-2, 
+>>>>>>> Stashed changes
      text="DCL", 
      color=color.green, 
      textcolor=color.white, 
@@ -976,7 +980,11 @@ plotshape(combined_long_entry_wcl and not combined_long_entry_wcl[1],
      title="WCL Long Entry Signal", 
      style=shape.labelup, 
      location=location.belowbar, 
+<<<<<<< Updated upstream
      offset=-1, 
+=======
+     offset=-5, 
+>>>>>>> Stashed changes
      text="WCL", 
      color=color.blue, 
      textcolor=color.white, 

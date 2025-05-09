@@ -1,114 +1,48 @@
-# Cycle Sniper Trading Strategy
+# Cycle Sniper
 
-## Current Implementation Status
-✅ Implemented:
-- FRAMA indicator integration
-- T3 indicator integration
-- Basic up_down indicator logic (Up_Down_V2)
-- Core signal processing for WCL and DCL detection
+A TradingView indicator designed to identify trading opportunities through cycle analysis, combining FRAMA and momentum indicators to detect Daily Cycle Lows (DCL) and Weekly Cycle Lows (WCL).
 
-🔄 In Progress:
-- Failed cycle detection and handling
-- Multiple trough prediction handling
-- Cycle confirmation state management
+## Features
 
-📝 Planned Features:
-- Ticker switching capability with 20-week plotting
-- LTR/MTR/RTR implementation
-- Unconfirmed cycle visualization (1/3, 2/3, 3/3 states)
-- Swing low accurate labeling system
+- **Smart Cycle Detection**: Automatically identifies Daily and Weekly cycle patterns
+- **Ticker-Specific Optimization**: Pre-configured settings for 50+ popular tickers
+- **Visual Predictions**: Shows future cycle predictions with confidence ranges
+- **Dual FRAMA System**: Uses adaptive moving averages for trend confirmation
+- **Real-Time Signals**: Provides clear entry signals with DCL and WCL markers
 
-## Core Strategy Components
+## Quick Start
 
-### 1. Signal Sources
-- FRAMA (Primary trend indicator)
-- Up_Down_V2 (Momentum indicator)
-- Leading cycle timing indicator
+1. Add indicator to your TradingView chart
+2. Enable "Ticker Presets" for optimized settings (recommended)
+3. Watch for DCL (green) and WCL (blue) signals below price bars
+4. Use the tooltip for detailed cycle timing information
 
-### 2. Cycle Detection Methods
+## Documentation
 
-#### Method 1 (DCL Focus - Very Bullish Conditions)
-- Monitors for 3-4 consecutive red bars
-- Confirms on 2 consecutive green bars
-- Used outside WCL range
-- Priority: Secondary to Method 2 unless in very bullish conditions
+- [Getting Started](docs/getting-started.md) - Installation and basic setup
+- [Configuration](docs/configuration.md) - Detailed parameter explanations
+- [Signals Guide](docs/signals.md) - Understanding entry signals
+- [Technical Details](docs/technical-details.md) - In-depth calculation methods
+- [Ticker Presets](docs/ticker-presets.md) - Pre-configured ticker settings
+- [Changelog](docs/changelog.md) - Version history and updates
 
-#### Method 2 (WCL Focus - Primary Method)
-- Requires 5+ consecutive red bars
-- Confirms on 2 consecutive green bars
-- Primary method for detecting Weekly Cycle Lows
-- Takes precedence when strong red sequence (≥5 bars) is present
+## Requirements
 
-### 3. Risk Management
-- Stop-loss placement below swing lows or FRAMA
-- Exit triggers on momentum shifts
-- 2% sector exposure limit
+- TradingView Pro account or higher
+- Chart timeframe: 1D recommended
+- Minimum of 200 bars of history
 
-## Development Roadmap
+## Support
 
-### Phase 1: Core Infrastructure (Current)
-- [x] Basic indicator implementation
-- [x] Signal generation logic
-- [x] Initial UI components
-
-### Phase 2: Enhanced Detection (Next)
-- [ ] Failed cycle detection
-- [ ] Timing-based DCL implementation
-- [ ] WCL transition handling
-- [ ] DCL after WCL trading logic
-
-### Phase 3: Multi-Asset Support
-- [x] Ticker switching functionality
-- [ ] 20-week moving average plotting
-- [ ] Translation analysis (LTR/MTR/RTR)
-
-### Phase 4: UI/UX Improvements
-- [ ] Cycle confirmation state visualization
-- [ ] Unconfirmed cycle markers
-- [ ] Swing low labeling system
-- [ ] Historical cycle display controls
-
-### Phase 5: Edge Cases & Optimization
-- [ ] Multiple trough prediction handling
-- [ ] Late entry logic refinement
-- [ ] Performance optimization
-- [ ] Enhanced error handling
-
-## Implementation Notes
-
-### Cycle Confirmation States
-1. Confirmed Cycle
-   - Indicator: Green dot + "DCL"
-   - Condition: Green bars exceed yellow threshold
-
-2. Unconfirmed Cycle
-   - Indicator: Yellow dot + "DCL"
-   - Condition: Entry signals fired but pending confirmation
-
-3. Failed States
-   - Unconfirmed Failure: Yellow dot + "✖️"
-   - Confirmed Failure: Red dot + "✖️"
-
-### Priority Rules
-1. Method 2 is primary for WCL detection
-2. Method 1 takes precedence in very bullish conditions
-3. Edge case handling for late entries when no yellow line breach occurs
+For issues, questions, or suggestions:
+- Check the documentation first
+- Submit issues through TradingView
+- Join our TradingView community group
 
 ## Contributing
-Please follow the established coding standards:
-- Document all indicator calculations
-- Include comprehensive error handling
-- Follow step-by-step implementation approach
-- Break complex tasks into manageable components
 
-## Testing Guidelines
-1. Verify cycle detection accuracy
-2. Validate confirmation state transitions
-3. Test edge case handling
-4. Ensure proper risk management enforcement
+Interested in contributing? Please see our contribution guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Future Considerations
-- Enhanced backtesting capabilities
-- Additional Confirmation logic 
-- Short analysis 
-- 
+## License
+
+© 2024 Cycle Sniper. All rights reserved.

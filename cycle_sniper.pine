@@ -878,21 +878,26 @@ plot(show_FRAMA ? frama_val_dcl : na, title="FRAMA DCL", color=color.yellow)
 plot(show_FRAMA ? frama_val_wcl : na, title="FRAMA WCL", color=color.blue)
 
 // ============================================================================
-// 17. Method 1 Revised Implementation
+// 17. Integrated Method 1 & 2 Implementation
 // ============================================================================
 
-// --- Price Condition Definitions ---
+// --- Common Price Condition Definitions ---
 hl2_val = (high + low) / 2
 greenCond = dopm ? (close > hl2_val[1]) : (close > close[1])
 redCond   = dopm ? (close < hl2_val[1]) : (close < close[1])
 
-// --- Persistent State Variables for Method 1 ---
+// --- Persistent State Variables for Both Methods ---
 var int   redCount_M1       = 0
 var int   greenCount_M1     = 0
 var bool  inConfirmation_M1 = false
 var bool  m1_signal         = false
 
-// --- Revised Method 1 Logic ---
+var int   redCount_M2       = 0
+var int   greenCount_M2     = 0
+var bool  inConfirmation_M2 = false
+var bool  m2_signal         = false
+
+// --- Method 1 Logic (Aggressive) ---
 if redCond
     redCount_M1    := nz(redCount_M1[1]) + 1
     greenCount_M1  := 0
@@ -901,7 +906,7 @@ if redCond
     m1_signal := false
 else if greenCond
     if not inConfirmation_M1
-        if nz(redCount_M1[1]) >= redBarTarget_M1
+        if nz(redCount_M1[1]) >= redBarTarget_M1  // Uses 3 bars
             inConfirmation_M1 := true
             greenCount_M1     := 1
             m1_signal         := false
@@ -925,12 +930,56 @@ else if greenCond
 else
     m1_signal := false
 
-// Plot M1 Signal
+// --- Method 2 Logic (Conservative) ---
+if redCond
+    if not inConfirmation_M2
+        redCount_M2    := nz(redCount_M2[1]) + 1
+        greenCount_M2  := 0
+        m2_signal      := false
+    else
+        inConfirmation_M2 := false
+        redCount_M2       := 0
+        greenCount_M2     := 0
+        m2_signal         := false
+else if greenCond
+    if redCond[1] and not inConfirmation_M2
+        if nz(redCount_M2[1]) >= yellowLine  // Uses 5 bars
+            inConfirmation_M2 := true
+            greenCount_M2     := 1
+            m2_signal         := false
+        else
+            redCount_M2   := 0
+            greenCount_M2 := 0
+            m2_signal     := false
+    else if inConfirmation_M2
+        greenCount_M2 := nz(greenCount_M2[1]) + 1
+        m2_signal     := false
+    else
+        greenCount_M2 := 0
+        m2_signal     := false
+else
+    m2_signal := false
+
+// Fire Method 2 signal
+if inConfirmation_M2 and greenCond and (greenCount_M2 >= magThreshold)
+    m2_signal := true
+    inConfirmation_M2 := false
+    redCount_M2       := 0
+    greenCount_M2     := 0
+
+// Plot both signals
 plotshape(m1_signal, 
      title="M1 Signal", 
      style=shape.triangleup, 
      location=location.belowbar, 
      color=color.green, 
+     size=size.tiny)
+
+plotshape(m2_signal, 
+     title="M2 Signal", 
+     style=shape.triangleup, 
+     location=location.belowbar, 
+     color=color.red, 
      size=size.tiny)
 
 // ============================================================================
@@ -947,18 +996,21 @@ bool combined_long_entry_wcl = true
 
 // UP/Down confirmation (if enabled)
 if use_ud_confirm
-    combined_long_entry_dcl := combined_long_entry_dcl and (math.sum((m1_signal) ? 1 : 0, 5) > 0)
-    combined_long_entry_wcl := combined_long_entry_wcl and (math.sum((m1_signal) ? 1 : 0, 5) > 0)
+    combined_long_entry_dcl := combined_long_entry_dcl and (math.sum((m1_signal or m2_signal) ? 1 : 0, 5) > 0)
+    combined_long_entry_wcl := combined_long_entry_wcl and (math.sum((m1_signal or m2_signal) ? 1 : 0, 5) > 0)
 
-// Always check both FRAMA conditions
-int lookback_period = 8
-// DCL FRAMA condition
-bool crossed_below_dcl = math.sum(high < frama_val_dcl ? 1 : 0, lookback_period) >= 3
+// Separate lookback periods for DCL and WCL
+int lookback_period_dcl = 4  // Tighter lookback for DCL
+int lookback_period_wcl = 8  // Original lookback for WCL
+
+// DCL FRAMA condition with body high
+bodyHigh = math.max(open, close)
+bool crossed_below_dcl = math.sum(bodyHigh < frama_val_dcl ? 1 : 0, lookback_period_dcl) >= 3
 bool current_above_dcl = close > frama_val_dcl
 combined_long_entry_dcl := combined_long_entry_dcl and current_above_dcl and crossed_below_dcl
 
-// WCL FRAMA condition
-bool crossed_below_wcl = math.sum(high < frama_val_wcl ? 1 : 0, lookback_period) >= 3
+// WCL FRAMA condition (unchanged lookback)
+bool crossed_below_wcl = math.sum(high < frama_val_wcl ? 1 : 0, lookback_period_wcl) >= 3
 bool current_above_wcl = close > frama_val_wcl
 combined_long_entry_wcl := combined_long_entry_wcl and current_above_wcl and crossed_below_wcl
 
@@ -967,11 +1019,7 @@ plotshape(combined_long_entry_dcl and not combined_long_entry_dcl[1],
      title="DCL Long Entry Signal", 
      style=shape.labelup, 
      location=location.belowbar, 
-<<<<<<< Updated upstream
-     offset=0, 
-=======
      offset=-2, 
->>>>>>> Stashed changes
      text="DCL", 
      color=color.green, 
      textcolor=color.white, 
@@ -980,11 +1028,7 @@ plotshape(combined_long_entry_wcl and not combined_long_entry_wcl[1],
      title="WCL Long Entry Signal", 
      style=shape.labelup, 
      location=location.belowbar, 
-<<<<<<< Updated upstream
-     offset=-1, 
-=======
      offset=-5, 
->>>>>>> Stashed changes
      text="WCL", 
      color=color.blue, 
      textcolor=color.white, 

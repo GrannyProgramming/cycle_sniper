@@ -9,9 +9,15 @@ useTickerSpecific = input.bool(true, "Ticker Presets", group=groupMain)
 show_future_dcl   = input.bool(true, "Show Future Cycle Lows", group=groupMain)
 show_hist_trough  = input.bool(true, "Show Historical Cycle Lows Predictions", group=groupMain)
 
-// ----- Confirmation Signals -----
 groupSignals = "Confirmation Signals"
 show_FRAMA = input.bool(true, "Show FRAMA Indicator", group=groupSignals)
+use_ud_confirm = input.bool(true, "Use Up/Down Confirmation", group=groupSignals)
+dcl_lookback_tolerance = input.int(5, "DCL Lookback Tolerance (bars)", minval=1, maxval=50, group=groupSignals, tooltip="Number of bars to look back for DCL signals. Default: 5")
+wcl_lookback_tolerance = input.int(8, "WCL Lookback Tolerance (bars)", minval=1, maxval=50, group=groupSignals, tooltip="Number of bars to look back for WCL signals. Default: 8")
+wcl_frama_tolerance = input.int(9, "WCL FRAMA Crossover Tolerance (bars)", minval=1, maxval=50, group=groupSignals, tooltip="Number of bars to allow for price to have been below WCL FRAMA. Default: 9")
+wcl_minimum_bars_between = input.int(15, "Minimum Bars Between WCL Signals", minval=5, maxval=100, group=groupSignals, tooltip="Minimum number of bars required between WCL signals to reduce clustering. Default: 15")
+wcl_price_threshold_pct = input.float(1.0, "WCL Price Difference Threshold (%)", minval=0.1, maxval=5.0, step=0.1, group=groupSignals, tooltip="Minimum percentage difference in price required to show a new WCL signal. Default: 1.0%")
+wcl_signal_strength_weight = input.float(0.7, "WCL Signal Strength Weight", minval=0.1, maxval=1.0, step=0.1, group=groupSignals, tooltip="Weight given to signal strength vs. time separation (1.0 = only strength matters). Default: 0.7")
 
 // ----- Manual Settings (formerly DCL Analysis) -----
 groupManual = "MANUAL SETTINGS"
@@ -44,7 +50,7 @@ var int DECIMALS = 2
 var int redBarTarget_M1 = 3      // Red Bar Target for Method 1
 var int magThreshold_M1 = 2      // Green Signal Magnitude for Method 1
 var bool dopm = true             // Use Midpoint (else use Prev Close)
-var int yellowLine = 5           // Yellow Threshold (min red bars)
+var int yellowLine = 4        
 var int magThreshold = 2         // Green Signal Magnitude
 
 // ============================================================================
@@ -452,6 +458,7 @@ if useTickerSpecific
         ticker_harmonic := "40 Day"
     else if syminfo.ticker == "TMO"
         ticker_dro := 9
+        ticker_dro := 9
         ticker_harmonic := "40 Day"
     else if syminfo.ticker == "TMUS"
         ticker_dro := 12
@@ -735,7 +742,8 @@ var line activeLineLeftDaily  = na
 var line activeLineRightDaily = na
 var linefill activeLineFillDaily = na
 
-int last_trough = (array.size(low_indices) > 0) ? array.get(low_indices, 0) : na
+// Fix for the array access error - add bounds checking
+int last_trough = array.size(low_indices) > 0 ? array.get(low_indices, 0) : na
 
 if show_future_dcl and not na(wavelength) and not na(last_trough)
     float half_width = wavelength / 4.0
@@ -874,8 +882,30 @@ float alpha__wcl = 2 / (N_val_wcl + 1)
 float alpha_wcl  = alpha__wcl < 2 / (framaSC + 1) ? 2 / (framaSC + 1) : (alpha__wcl > 1 ? 1 : alpha__wcl)
 frama_val_wcl := (1 - alpha_wcl) * nz(frama_val_wcl[1]) + alpha_wcl * src
 
+// --- FRAMA Crossing Logic - Define once here for use throughout the script ---
+bool price_above_dcl_frama = close > frama_val_dcl
+bool price_above_wcl_frama = close > frama_val_wcl
+bool price_crossed_above_dcl = ta.crossover(close, frama_val_dcl)
+bool price_crossed_above_wcl = ta.crossover(close, frama_val_wcl)
+
+// FRAMA Plot
 plot(show_FRAMA ? frama_val_dcl : na, title="FRAMA DCL", color=color.yellow)
 plot(show_FRAMA ? frama_val_wcl : na, title="FRAMA WCL", color=color.blue)
+
+// --- FRAMA Crossover Markers ---
+plotshape(show_FRAMA and price_crossed_above_dcl, 
+     title="DCL FRAMA Cross", 
+     style=shape.circle, 
+     location=location.belowbar, 
+     color=color.new(color.yellow, 0), 
+     size=size.tiny)
+
+plotshape(show_FRAMA and price_crossed_above_wcl, 
+     title="WCL FRAMA Cross", 
+     style=shape.circle, 
+     location=location.belowbar, 
+     color=color.new(color.blue, 0), 
+     size=size.tiny)
 
 // ============================================================================
 // 17. Integrated Method 1 & 2 Implementation
@@ -983,54 +1013,263 @@ plotshape(m2_signal,
      size=size.tiny)
 
 // ============================================================================
-// 19. Integrated Long Entry Signal with FRAMA and UP_down Confirmation
+// 19. DCL and WCL Entry Logic - Production Ready Implementation
 // ============================================================================
 
-// Remove input toggles for FRAMA confirmation and keep only UP/Down confirmation
-groupConfirmSignals = "Confirmation Options"
-use_ud_confirm = input.bool(true, title="Use UP/Down Confirmation", group=groupConfirmSignals)
+// --- Signal Variables ---
+var bool dcl_signal = false
+var bool wcl_signal = false
 
-// Modified combined entry logic with both signals always active
-bool combined_long_entry_dcl = true
-bool combined_long_entry_wcl = true
+// --- Arrays to track historical signal information ---
+var array<float> dcl_signal_prices = array.new_float()
+var array<int> dcl_signal_bars = array.new_int()
+var array<float> wcl_signal_prices = array.new_float()
+var array<int> wcl_signal_bars = array.new_int()
+var array<int> wcl_signal_history = array.new_int(5, 0)  // Last 5 bars WCL signal history
+var array<bool> price_below_wcl_frama_history = array.new_bool(10, false)  // Track price below WCL FRAMA for last 10 bars
+// Add array to track when price crosses above WCL FRAMA
+var array<int> wcl_frama_crossover_bars = array.new_int(50, 0)  // Track when price crosses above WCL FRAMA
 
-// UP/Down confirmation (if enabled)
+// --- Constants ---
+int WCL_TOLERANCE_BARS = wcl_frama_tolerance  // Tolerance window for WCL conditions (user-configurable)
+int DCL_M_SIGNAL_LOOKBACK = 3 // Lookback for M1 signals for DCL (current bar + 2 previous)
+
+// --- Update tracking arrays ---
+if barstate.isfirst
+    // Initialize arrays
+    for i = 0 to 4
+        array.set(wcl_signal_history, i, 0)
+    for i = 0 to 9
+        array.set(price_below_wcl_frama_history, i, false)
+    for i = 0 to 49
+        array.set(wcl_frama_crossover_bars, i, 0)
+else
+    // Shift WCL signal history array
+    array.set(wcl_signal_history, 4, array.get(wcl_signal_history, 3))
+    array.set(wcl_signal_history, 3, array.get(wcl_signal_history, 2))
+    array.set(wcl_signal_history, 2, array.get(wcl_signal_history, 1))
+    array.set(wcl_signal_history, 1, array.get(wcl_signal_history, 0))
+    array.set(wcl_signal_history, 0, wcl_signal ? 1 : 0)
+    
+    // Shift price below WCL FRAMA history array (manual shifting from oldest to newest)
+    for i = 9 to 1
+        array.set(price_below_wcl_frama_history, i, array.get(price_below_wcl_frama_history, i-1))
+    // MODIFIED: Use close price instead of high for testing price below FRAMA
+    array.set(price_below_wcl_frama_history, 0, close < frama_val_wcl)  // Close must be below FRAMA
+    
+    // Shift crossover history array
+    for i = 49 to 1
+        array.set(wcl_frama_crossover_bars, i, array.get(wcl_frama_crossover_bars, i-1))
+    // Track when price crosses above WCL FRAMA
+    array.set(wcl_frama_crossover_bars, 0, price_crossed_above_wcl ? bar_index : 0)
+
+// --- Check for M1 signals within lookback for DCL (M1 ONLY) ---
+bool had_m1_signal_for_dcl = math.sum(m1_signal ? 1 : 0, DCL_M_SIGNAL_LOOKBACK) > 0
+
+// --- Check for M2 signals within lookback (M2 ONLY FOR WCL) --- 
+bool had_m2_signal_for_dcl = math.sum(m2_signal ? 1 : 0, DCL_M_SIGNAL_LOOKBACK) > 0  // Keep for debugging only
+
+// --- Check explicitly for M2 signals within tolerance window (FOR WCL ONLY) ---
+// IMPORTANT FIX: Include current bar M2 signal check first
+bool had_m2_signal_in_tolerance = m2_signal // Check current bar first
+if not had_m2_signal_in_tolerance // Only check history if current bar doesn't have M2 signal
+    int m2_lookback = math.min(WCL_TOLERANCE_BARS, 50)  // Cap at 50 for performance
+    for i = 1 to m2_lookback
+        if i <= 50 and nz(m2_signal[i])  // Check explicitly within the tolerance period
+            had_m2_signal_in_tolerance := true
+            break
+
+// --- Check for recent WCL signals (within last 5 bars) ---
+bool had_recent_wcl = false
+for i = 0 to 4
+    if array.get(wcl_signal_history, i) == 1
+        had_recent_wcl := true
+        break
+
+// --- Check if price has been below WCL FRAMA within tolerance period ---
+// MODIFIED: Use close price instead of high for testing price below FRAMA
+bool price_was_below_wcl_frama = close < frama_val_wcl // Check current bar first
+if not price_was_below_wcl_frama // Only check history if current bar doesn't satisfy condition
+    for i = 1 to WCL_TOLERANCE_BARS
+        if i < array.size(price_below_wcl_frama_history) and array.get(price_below_wcl_frama_history, i)
+            price_was_below_wcl_frama := true
+            break
+
+// --- NEW: Check for crossover-first scenario ---
+// This handles the case where price crosses above FRAMA first, then M2 signal fires later
+bool crossover_first_m2_later = false
+bool price_high_above_wcl_frama = high > frama_val_wcl
+
+// If we have an M2 signal now, check if there was a FRAMA crossover within tolerance
+if m2_signal and price_high_above_wcl_frama
+    for i = 1 to WCL_TOLERANCE_BARS  // Use the same tolerance period
+        int stored_bar_index = array.get(wcl_frama_crossover_bars, i)
+        // Check if we have a valid stored crossover within tolerance
+        if stored_bar_index > 0 and (bar_index - stored_bar_index) <= WCL_TOLERANCE_BARS
+            crossover_first_m2_later := true
+            break
+      
+// --- Check for WCL signals in a tighter window (for filtering) ---
+bool had_recent_wcl_in_window = false
+// Fix for array out-of-bounds error
+int wcl_bars_size = array.size(wcl_signal_bars)
+if wcl_bars_size > 0
+    for i = 0 to math.min(5, wcl_bars_size-1)
+        if math.abs(bar_index - array.get(wcl_signal_bars, i)) <= 5
+            had_recent_wcl_in_window := true
+            break
+
+// --- Generate DCL Signal (Daily Cycle Low) - ONLY USE METHOD 1 ---
+// DCL should ONLY use Method 1 signals (more aggressive)
+bool dcl_method1_base_signal = price_crossed_above_dcl and had_m1_signal_for_dcl
+// Remove Method 2 influence from DCL signal generation
+bool dcl_base_signal = dcl_method1_base_signal
+
+// --- Generate WCL Signal (Weekly Cycle Low) - EXPLICITLY using only Method 2 signals ---
+// Two paths to generate WCL signals:
+// PATH 1 (Original): Price below FRAMA, M2 signal, then price crosses above FRAMA
+// PATH 2 (New): Price crosses above FRAMA, then M2 signal fires while price high above FRAMA
+bool wcl_base_signal = (price_crossed_above_wcl and had_m2_signal_in_tolerance and price_was_below_wcl_frama) or crossover_first_m2_later
+
+// --- Price comparison logic for DCL signals - Improved implementation ---
+bool dcl_price_condition = true
+if array.size(dcl_signal_prices) > 0
+    // Check if there's a previous signal within strict user-defined lookback period
+    bool has_recent_dcl = false
+    int recent_dcl_index = -1
+    
+    for i = 0 to array.size(dcl_signal_bars) - 1
+        int bars_ago = bar_index - array.get(dcl_signal_bars, i)
+        // Use only the exact user-defined tolerance
+        if bars_ago <= dcl_lookback_tolerance
+            has_recent_dcl := true
+            recent_dcl_index := i
+            break
+    
+    if has_recent_dcl and recent_dcl_index >= 0
+        // Only show signal if current price is lower than previous signal price
+        dcl_price_condition := close < array.get(dcl_signal_prices, recent_dcl_index)
+
+// --- Enhanced Price comparison logic for WCL signals ---
+bool wcl_price_condition = true
+float quality_score = 0.0  // Quality score for signals (higher is better)
+
+// If we have previous WCL signals, apply advanced filtering
+if array.size(wcl_signal_prices) > 0
+    // 1. Check for minimum bars between signals (time separation)
+    bool exceeds_minimum_separation = true
+    int bars_since_last_wcl = 999999  // Large default value
+    
+    // Find most recent WCL signal
+    for i = 0 to array.size(wcl_signal_bars) - 1
+        int bars_ago = bar_index - array.get(wcl_signal_bars, i)
+        if bars_ago < bars_since_last_wcl
+            bars_since_last_wcl := bars_ago
+    
+    // Apply minimum bar separation requirement
+    exceeds_minimum_separation := bars_since_last_wcl > wcl_minimum_bars_between
+    
+    // 2. Calculate price difference as percentage
+    float last_signal_price = array.size(wcl_signal_prices) > 0 ? array.get(wcl_signal_prices, 0) : high * 1.5
+    float price_diff_percent = ((last_signal_price - close) / last_signal_price) * 100
+    bool price_diff_significant = price_diff_percent >= wcl_price_threshold_pct
+    
+    // 3. Calculate quality score for this signal combining both factors
+    float time_separation_score = math.min(1.0, bars_since_last_wcl / float(wcl_minimum_bars_between * 2))
+    float price_diff_score = math.min(1.0, price_diff_percent / (wcl_price_threshold_pct * 2))
+    
+    // Weighted score - adjustable balance between time and price importance
+    quality_score := (wcl_signal_strength_weight * price_diff_score) + ((1.0 - wcl_signal_strength_weight) * time_separation_score)
+    
+    // Enhanced filtering logic:
+    // 1. If we're in close proximity to last signal (under half minimum), require high quality score
+    if bars_since_last_wcl <= math.round(wcl_minimum_bars_between / 2)
+        // Need higher quality threshold for very recent signals
+        wcl_price_condition := quality_score >= 0.9 and price_diff_significant
+    
+    // 2. Medium proximity (between half and full minimum)
+    else if bars_since_last_wcl <= wcl_minimum_bars_between
+        // Medium-high quality threshold
+        wcl_price_condition := quality_score >= 0.75
+    
+    // 3. Beyond minimum separation - normal criteria
+    else
+        // Normal criteria - either good time separation or significant price move
+        wcl_price_condition := exceeds_minimum_separation or 
+                             price_diff_significant or 
+                             quality_score >= 0.6
+    
+    // // Debug info to help understand filtering decisions
+    // if barstate.islast
+    //     label.new(bar_index, low * 0.98, 
+    //          text="Last WCL: " + str.tostring(bars_since_last_wcl) + " bars ago" +
+    //               "\nPrice diff: " + str.tostring(math.round(price_diff_percent, 2)) + "%" +
+    //               "\nQuality score: " + str.tostring(math.round(quality_score, 2)) +
+    //               "\nSignal allowed: " + str.tostring(wcl_price_condition),
+    //          style=label.style_label_down, color=color.new(color.blue, 70), textcolor=color.white)
+
+// --- Calculate potential signals (before applying final priority rules) ---
+bool potential_dcl_signal = dcl_base_signal and dcl_price_condition
+bool potential_wcl_signal = wcl_base_signal and wcl_price_condition
+
+// --- Check for simultaneous crossovers with M2 signal ---
+// For WCL, we explicitly require M2 signals, not M1
+// IMPORTANT FIX: Include current bar M2 signal in simultaneous crossover check
+bool simultaneous_crossover = price_crossed_above_dcl and price_crossed_above_wcl and had_m2_signal_in_tolerance
+
+// --- Apply Up/Down Confirmation (if enabled) ---
 if use_ud_confirm
-    combined_long_entry_dcl := combined_long_entry_dcl and (math.sum((m1_signal or m2_signal) ? 1 : 0, 5) > 0)
-    combined_long_entry_wcl := combined_long_entry_wcl and (math.sum((m1_signal or m2_signal) ? 1 : 0, 5) > 0)
+    // Require recent green candles for confirmation
+    potential_dcl_signal := potential_dcl_signal and (math.sum(greenCond ? 1 : 0, 3) >= 2)
+    potential_wcl_signal := potential_wcl_signal and (math.sum(greenCond ? 1 : 0, 3) >= 2)
 
-// Separate lookback periods for DCL and WCL
-int lookback_period_dcl = 4  // Tighter lookback for DCL
-int lookback_period_wcl = 8  // Original lookback for WCL
+// --- Enhanced Signal Priority Rules ---
+// IMPORTANT FIX: Add stronger prioritization logic for simultaneous crossovers
+// When there's a simultaneous crossover with M2 signal (current or recent), ALWAYS prioritize WCL
+if price_crossed_above_dcl and price_crossed_above_wcl and (m2_signal or had_m2_signal_in_tolerance)
+    potential_wcl_signal := true        // Force WCL signal to be true
+    potential_dcl_signal := false       // Force DCL signal to be false
 
-// DCL FRAMA condition with body high
-bodyHigh = math.max(open, close)
-bool crossed_below_dcl = math.sum(bodyHigh < frama_val_dcl ? 1 : 0, lookback_period_dcl) >= 3
-bool current_above_dcl = close > frama_val_dcl
-combined_long_entry_dcl := combined_long_entry_dcl and current_above_dcl and crossed_below_dcl
+// Standard priority still applies (WCL always takes precedence)
+// Set display signals with proper priority
+bool display_wcl_signal = potential_wcl_signal
+bool display_dcl_signal = potential_dcl_signal and not potential_wcl_signal
 
-// WCL FRAMA condition (unchanged lookback)
-bool crossed_below_wcl = math.sum(high < frama_val_wcl ? 1 : 0, lookback_period_wcl) >= 3
-bool current_above_wcl = close > frama_val_wcl
-combined_long_entry_wcl := combined_long_entry_wcl and current_above_wcl and crossed_below_wcl
+// --- Update arrays with the potential signals for history tracking ---
+// Store DCL signal info regardless of display status for future reference
+if potential_dcl_signal
+    array.unshift(dcl_signal_prices, close)
+    array.unshift(dcl_signal_bars, bar_index)
+    // Keep arrays at reasonable size
+    if array.size(dcl_signal_prices) > 100
+        array.pop(dcl_signal_prices)
+        array.pop(dcl_signal_bars)
 
-// Plot both signals simultaneously with their respective colors
-plotshape(combined_long_entry_dcl and not combined_long_entry_dcl[1], 
-     title="DCL Long Entry Signal", 
-     style=shape.labelup, 
+// Store WCL signal info regardless of display status for future reference
+if potential_wcl_signal
+    array.unshift(wcl_signal_prices, close)
+    array.unshift(wcl_signal_bars, bar_index)
+    // Keep arrays at reasonable size
+    if array.size(wcl_signal_prices) > 100
+        array.pop(wcl_signal_prices)
+        array.pop(wcl_signal_bars)
+
+// Set final signal variables for use in plotting and history tracking
+dcl_signal := display_dcl_signal
+wcl_signal := display_wcl_signal
+
+
+// --- Plot Signals with Appropriate Styles ---
+plotshape(display_dcl_signal, 
+     title="DCL Signal", 
+     style=shape.triangleup, 
      location=location.belowbar, 
-     offset=-2, 
-     text="DCL", 
      color=color.green, 
-     textcolor=color.white, 
-     size=size.tiny)
-plotshape(combined_long_entry_wcl and not combined_long_entry_wcl[1], 
-     title="WCL Long Entry Signal", 
-     style=shape.labelup, 
-     location=location.belowbar, 
-     offset=-5, 
-     text="WCL", 
-     color=color.blue, 
-     textcolor=color.white, 
-     size=size.tiny)
+     size=size.small)
 
+plotshape(display_wcl_signal, 
+     title="WCL Signal", 
+     style=shape.triangleup, 
+     location=location.belowbar, 
+     color=color.new(color.blue, math.max(0, 90 - math.round(quality_score * 90))), 
+     size=size.small)
